@@ -36,7 +36,7 @@ int main(int argc, char **argv){
         printf("%s is not a group. Use the group_helper executable to create groups and add users to them.\n");
         close(acrt_p);
         printf("Deleting pipe named %s\n",p_n);
-        remove(p_n);
+        unlink(p_n);
         return 1;
     }
     gid_t aug_id = aug->gr_gid;
@@ -45,14 +45,14 @@ int main(int argc, char **argv){
         printf("strerror output: %s\n",strerror(errno));
         close(acrt_p);
         printf("Deleting pipe named %s\n",p_n);
-        remove(p_n);
+        unlink(p_n);
         return 1;
     }
     if (chmod(p_n, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH) == -1) {
         printf("Can't change file permissions of %s\n",p_n);
         close(acrt_p);
         printf("Deleting pipe named %s\n",p_n);
-        remove(p_n);
+        unlink(p_n);
         return 1;
     }
     printf("Users in %s can now read/write to %s\n",argv[1],p_n);
@@ -62,7 +62,7 @@ int main(int argc, char **argv){
         printf("Can't create child process.\n");
         close(acrt_p);
         printf("Deleting pipe named %s\n",p_n);
-        remove(p_n);
+        unlink(p_n);
         return 1;
     }
     if(f==0){
@@ -70,7 +70,7 @@ int main(int argc, char **argv){
         start_r(acrt_p);
         close(acrt_p);
         printf("Deleting pipe named %s\n",p_n);
-        remove(p_n);
+        unlink(p_n);
         return 0;
     }
     else{
