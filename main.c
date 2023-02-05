@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <errno.h>
@@ -25,12 +26,17 @@ int main(int argc, char **argv){
     }
     printf("Name of pipe will be %s\n",p_n);
     int acrt_p;
-    if((acrt_p=mkfifo(p_n,PIPE_PERMS))==-1){
+    if(mkfifo(p_n,PIPE_PERMS)-1){
         printf("Pipe can't be created. This can happen if the pipe already exists. If this isn't the case, create an issue on Github.\n");
         printf("strerror output: %s.\n",strerror(errno));
         return 1;
     }
     printf("Pipe with name %s created.\n",p_n);
+    if((acrt_p=open(p_n,O_RDONLY | O_WRONLY))==-1){
+        printf("Can't open the named pipe.\n");
+        printf("Deleting pipe named %s\n",p_n);
+        unlink(p_n);
+    }
     struct group *aug=getgrnam(argv[1]);
     if(!aug){
         printf("%s is not a group. Use the group_helper executable to create groups and add users to them.\n");
