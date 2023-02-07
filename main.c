@@ -9,7 +9,7 @@
 #include "daemonf.h"
 
 #define DEFAULT_PIPE "acrt_p"
-#define PIPE_PERMS 066
+#define PIPE_PERMS 666
 #define MAX_PIPE_N_S 256
 
 int main(int argc, char **argv){
@@ -26,20 +26,23 @@ int main(int argc, char **argv){
     }
     printf("Name of pipe will be %s\n",p_n);
     int acrt_p;
-    if(mkfifo(p_n,PIPE_PERMS)-1){
+    if(mkfifo(p_n,PIPE_PERMS)==-1){
         printf("Pipe can't be created. This can happen if the pipe already exists. If this isn't the case, create an issue on Github.\n");
         printf("strerror output: %s.\n",strerror(errno));
         return 1;
     }
     printf("Pipe with name %s created.\n",p_n);
-    if((acrt_p=open(p_n,O_RDONLY | O_WRONLY))==-1){
+    if((acrt_p=open(p_n,O_RDWR | O_NONBLOCK))==-1){
         printf("Can't open the named pipe.\n");
+        printf("strerror output: %s.\n",strerror(errno));
         printf("Deleting pipe named %s\n",p_n);
         unlink(p_n);
+        return 1;
     }
     struct group *aug=getgrnam(argv[1]);
     if(!aug){
         printf("%s is not a group. Use the group_helper executable to create groups and add users to them.\n");
+        printf("strerror output: %s.\n",strerror(errno));
         close(acrt_p);
         printf("Deleting pipe named %s\n",p_n);
         unlink(p_n);
@@ -56,6 +59,7 @@ int main(int argc, char **argv){
     }
     if (chmod(p_n, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH) == -1) {
         printf("Can't change file permissions of %s\n",p_n);
+        printf("strerror output: %s.\n",strerror(errno));
         close(acrt_p);
         printf("Deleting pipe named %s\n",p_n);
         unlink(p_n);
@@ -68,6 +72,7 @@ int main(int argc, char **argv){
         printf("Can't create child process.\n");
         close(acrt_p);
         printf("Deleting pipe named %s\n",p_n);
+        printf("strerror output: %s.\n",strerror(errno));
         unlink(p_n);
         return 1;
     }

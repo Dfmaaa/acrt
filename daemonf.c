@@ -6,8 +6,10 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#define MAX_READ 2000
-char *execute(const char *command) {
+#include <sys/select.h>
+#include <sys/time.h>
+#define MAX_BUF_SIZE 100
+char *execute(char *command) {
     char buffer[1024];
     char *result = NULL;
     size_t result_len = 0;
@@ -31,21 +33,39 @@ char *execute(const char *command) {
     pclose(fp);
     return result;
 }
-int start_r(int pipe){
-    while(1){
-        char buffer[MAX_READ];
-        int c;
-        if((c=read(pipe,buffer,MAX_READ))==-1){
-            return -1;
-        }
-        buffer[c]='\0';
-        if(strcmp(buffer,"exit")==0){
+
+int start_r(int read_fd) {
+  while(1){
+  fd_set read_fds;
+  int ret;
+  // Initialize the file descriptor set for the select function
+  FD_ZERO(&read_fds);
+  FD_SET(read_fd, &read_fds);
+  // Wait for data to be available on the pipe
+  ret = select(read_fd + 1, &read_fds, NULL, NULL, NULL);
+  if (ret == -1) {
+    // Error occurred
+    return -1;
+  } else if (ret == 0) {
+    // Timeout occurred
+    return 0;
+  } else {
+    // Data is available to be read from the pipe
+    char buf[MAX_BUF_SIZE];
+    int num_read = read(read_fd, buf, MAX_BUF_SIZE);
+    if (num_read == -1) {
+      // Error occurred
+      return -1;
+    }
+    buf[num_read]='\0';
+        if(strcmp(buf,"exit")==0){
             return 1;
         }
-        char *output=execute(buffer);
-        if((c=write(pipe,output,2147483647))==-1){
+        char *output=execute(buf);
+        if(write(read_fd,output,2147483647)==-1){
             return -1;
         }
     }
-    return 1;
-}
+  }
+  return 0;
+ }
